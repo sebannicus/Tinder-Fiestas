@@ -19,5 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('blockchain_api.urls')),  # 👈 Aquí conectas la app
+    path('api/', include('blockchain_api.urls')),  # 👈 Conecta la app blockchain_api
 ]
