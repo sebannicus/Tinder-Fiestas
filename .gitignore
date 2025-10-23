@@ -1,0 +1,25 @@
+# Archivos de entorno
+.env
+*.log
+
+# Carpetas de entorno virtual
+venv/
+.venv/
+
+# Archivos de compilación
+__pycache__/
+*.pyc
+
+# Node modules
+node_modules/
+
+# Archivos temporales
+.DS_Store
+*.sqlite3
+
+# Hardhat cache y artifacts
+blockchain/cache/
+blockchain/artifacts/
+
+# Archivos de sistema
+Thumbs.db
