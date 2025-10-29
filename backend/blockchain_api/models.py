@@ -12,6 +12,8 @@ class UserProfile(models.Model):
 class CheckIn(models.Model):
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="checkins")
     location = models.CharField(max_length=100)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     tx_hash = models.CharField(max_length=100)
     timestamp = models.DateTimeField(auto_now_add=True)
 

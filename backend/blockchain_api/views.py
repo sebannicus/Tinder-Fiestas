@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .blockchain_service import get_last_location, check_in
 from .models import UserProfile, CheckIn
+from .analytics_service import get_heatmap_data, get_activity_stats
 
 # ✅ GET: obtener última ubicación
 @api_view(['GET'])
@@ -49,3 +50,23 @@ def register_checkin(request):
         "mensaje": f"Check-in registrado en blockchain y base local: {location}",
         "tx_hash": tx_hash
     })
+
+@api_view(["GET"])
+def heatmap_data(request):
+    """
+    Endpoint: /api/heatmap/
+    Retorna los puntos de calor agrupados por coordenadas.
+    """
+    data = get_heatmap_data()
+    return Response(data)
+
+
+@api_view(["GET"])
+def activity_stats(request):
+    """
+    Endpoint: /api/stats/
+    Retorna estadísticas de actividad (check-ins, usuarios, top lugares).
+    """
+    days = int(request.GET.get("days", 7))
+    stats = get_activity_stats(days=days)
+    return Response(stats)
