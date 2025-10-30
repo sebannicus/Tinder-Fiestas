@@ -45,6 +45,11 @@ def register_checkin(request):
     # Registrar check-in local
     CheckIn.objects.create(user=user, location=location, tx_hash=tx_hash)
 
+    checkin = CheckIn.objects.create(
+                user_id=user_id,
+                location=location,
+                tx_hash=tx_hash,
+            )   
     return Response({
         "status": "success",
         "mensaje": f"Check-in registrado en blockchain y base local: {location}",
