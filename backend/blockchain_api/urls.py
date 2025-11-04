@@ -6,6 +6,7 @@ urlpatterns = [
     path('checkin/', views.register_checkin),
     path("heatmap/", views.heatmap_data),
     path("stats/", views.activity_stats),
-    path('checkin/', views.registrar_checkin),
     path('heatmap/', views.heatmap_view, name='heatmap_view'),
+    path("events/", views.events_view),
+    path("mapa/", views.mapa_completo),
 ]

@@ -4,7 +4,9 @@ from .blockchain_service import get_last_location, check_in
 from .models import UserProfile, CheckIn
 from .analytics_service import get_heatmap_data, get_activity_stats
 from django.http import JsonResponse
-from .models import CheckIn
+from .models import Event, CheckIn
+from .serializers import EventSerializer
+from rest_framework import status
 
 # ✅ GET: obtener última ubicación
 @api_view(['GET'])
@@ -103,3 +105,50 @@ def heatmap_view(request):
     ]
 
     return JsonResponse(response, safe=False)
+
+@api_view(["GET", "POST"])
+def events_view(request):
+    """
+    GET → lista todos los eventos
+    POST → crea un nuevo evento
+    """
+    if request.method == "GET":
+        eventos = Event.objects.all().order_by("-start_date")
+        serializer = EventSerializer(eventos, many=True)
+        return Response(serializer.data)
+
+    elif request.method == "POST":
+        serializer = EventSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"status": "success", "evento": serializer.data},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(["GET"])
+def mapa_completo(request):
+    """
+    Devuelve datos combinados:
+    - Eventos (marcadores)
+    - Check-ins (puntos de calor)
+    """
+    from .models import Event, CheckIn
+    from .serializers import EventSerializer
+
+    # Eventos
+    eventos = Event.objects.all()
+    eventos_data = EventSerializer(eventos, many=True).data
+
+    # Check-ins (solo los que tienen coordenadas)
+    checkins = CheckIn.objects.filter(latitude__isnull=False, longitude__isnull=False)
+    checkins_data = [
+        {"latitude": c.latitude, "longitude": c.longitude, "count": 1}
+        for c in checkins
+    ]
+
+    return Response({
+        "eventos": eventos_data,
+        "checkins": checkins_data
+    })

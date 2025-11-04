@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+
 class UserProfile(models.Model):
     wallet_address = models.CharField(max_length=100, unique=True)
     username = models.CharField(max_length=50, blank=True, null=True)
@@ -20,13 +21,17 @@ class CheckIn(models.Model):
 
     def __str__(self):
         return f"{self.user.wallet_address} → {self.location}"
-class CheckIn(models.Model):
-    user_id = models.IntegerField()
+
+
+class Event(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=255)
-    latitude = models.FloatField(null=True, blank=True)
-    longitude = models.FloatField(null=True, blank=True)
-    tx_hash = models.CharField(max_length=255)
-    timestamp = models.DateTimeField(default=timezone.now)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.user_id} → {self.location}"
+        return f"{self.name} ({self.start_date.date()} - {self.end_date.date()})"
