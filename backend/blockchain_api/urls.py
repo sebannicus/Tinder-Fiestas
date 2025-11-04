@@ -9,4 +9,5 @@ urlpatterns = [
     path('heatmap/', views.heatmap_view, name='heatmap_view'),
     path("events/", views.events_view),
     path("mapa/", views.mapa_completo),
+    path("event_checkin/", views.event_checkin),
 ]

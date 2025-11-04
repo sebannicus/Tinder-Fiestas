@@ -152,3 +152,55 @@ def mapa_completo(request):
         "eventos": eventos_data,
         "checkins": checkins_data
     })
+
+@api_view(["POST"])
+def event_checkin(request):
+    """
+    Registra la asistencia de un usuario (wallet) a un evento.
+    Si no hay fondos en la wallet, se registra igual con tx_hash simulado.
+    """
+    event_id = request.data.get("event_id")
+    private_key = request.data.get("private_key")
+
+    if not event_id or not private_key:
+        return Response({"status": "error", "message": "Faltan parámetros"}, status=400)
+
+    from web3 import Web3
+    from .blockchain_service import check_in
+    from .models import Event, EventAttendance, UserProfile
+    import uuid
+
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        return Response({"status": "error", "message": "Evento no encontrado"}, status=404)
+
+    # Conectar al nodo local
+    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
+    user_address = w3.eth.account.from_key(private_key).address
+
+    # Crear o recuperar usuario
+    user, _ = UserProfile.objects.get_or_create(wallet_address=user_address)
+
+    # Intentar registrar en blockchain
+    tx_hash = None
+    try:
+        tx_hash = check_in(event.location, private_key)
+    except Exception as e:
+        print(f"⚠️ Error en blockchain: {e}")
+        # Simulación local si no hay fondos
+        tx_hash = f"SIMULATED_TX_{uuid.uuid4().hex[:10]}"
+
+    # Guardar asistencia en base local
+    asistencia = EventAttendance.objects.create(
+        user=user,
+        event=event,
+        tx_hash=tx_hash
+    )
+
+    return Response({
+        "status": "success",
+        "message": f"Asistencia registrada para {event.name}",
+        "tx_hash": tx_hash,
+        "wallet": user.wallet_address
+    })

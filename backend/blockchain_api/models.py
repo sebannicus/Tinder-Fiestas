@@ -35,3 +35,12 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.start_date.date()} - {self.end_date.date()})"
+
+class EventAttendance(models.Model):
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="attendances")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="attendees")
+    tx_hash = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.user.wallet_address} asistió a {self.event.name}"
