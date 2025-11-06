@@ -4,9 +4,8 @@ from . import views
 urlpatterns = [
     path('checkins/<str:address>/', views.obtener_ubicacion),
     path('checkin/', views.register_checkin),
-    path("heatmap/", views.heatmap_data),
+    path("heatmap/", views.heatmap_data, name='heatmap_data'),
     path("stats/", views.activity_stats),
-    path('heatmap/', views.heatmap_view, name='heatmap_view'),
     path("events/", views.events_view),
     path("mapa/", views.mapa_completo),
     path("event_checkin/", views.event_checkin),
