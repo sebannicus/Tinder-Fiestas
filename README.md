@@ -34,23 +34,23 @@ Una red trazable, transparente y visual para **experiencias sociales geolocaliza
 ## ⚙️ Estructura del Proyecto
 
 tinder-de-las-fiestas/
-│
-├── backend/ # API REST Django
-│ ├── blockchain_api/ # Integración Web3 + ORM + Views
-│ ├── tools/ # Scripts de mantenimiento (reset, seeds, etc.)
-│ ├── manage.py
-│ ├── .env # Variables de entorno
-│ └── venv/ # Entorno virtual Python
-│
-├── blockchain/ # Contrato inteligente + scripts Hardhat
-│ ├── contracts/ProofOfPresence.sol
-│ ├── scripts/deploy.js
-│ └── deployed/ProofOfPresence.json
-│
-└── frontend/ # Next.js + Tailwind + MapLibre
-├── src/app/
-├── package.json
-└── ...
+ │
+ ├── backend/ # API REST Django
+ │ ├── blockchain_api/ # Integración Web3 + ORM + Views
+ │ ├── tools/ # Scripts de mantenimiento (reset, seeds, etc.)
+ │ ├── manage.py
+ │ ├── .env # Variables de entorno
+ │ └── venv/ # Entorno virtual Python
+ │
+ ├── blockchain/ # Contrato inteligente + scripts Hardhat
+ │ ├── contracts/ProofOfPresence.sol
+ │ ├── scripts/deploy.js
+ │ └── deployed/ProofOfPresence.json
+ │
+ └── frontend/ # Next.js + Tailwind + MapLibre
+ ├── src/app/
+ ├── package.json
+ └── ...
 
 
 ## 🚀 Requisitos Previos
@@ -178,6 +178,7 @@ Sebastián Morales (sebannicus)
 📍 La Serena, Chile
 💼 Fullstack Blockchain Developer
 💬 “Construyendo experiencias descentralizadas que conectan personas en tiempo real.”
+
 
 
 
