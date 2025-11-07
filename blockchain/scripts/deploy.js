@@ -1,25 +1,34 @@
+const fs = require("fs");
+const path = require("path");
+
 async function main() {
-  // Importamos el entorno dinámicamente desde Hardhat
-  const hre = require("hardhat");
-
-  // Confirmamos que ethers está disponible
-  const { ethers } = hre;
-
-  // Obtenemos el contrato
   const ProofOfPresence = await ethers.getContractFactory("ProofOfPresence");
-
-  // Lo desplegamos
   const pop = await ProofOfPresence.deploy();
-
-  // Esperamos a que esté en la red
   await pop.waitForDeployment();
 
-  console.log("✅ Contract deployed to:", await pop.getAddress());
+  const address = await pop.getAddress();
+  console.log("✅ Contract deployed to:", address);
+
+  // Crear objeto con la info del contrato
+  const contractData = {
+    address: address,
+    abi: JSON.parse(pop.interface.formatJson())
+  };
+
+  // Ruta para guardar el JSON
+  const dir = path.resolve(__dirname, "../deployed");
+  const filePath = path.join(dir, "ProofOfPresence.json");
+
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+
+  fs.writeFileSync(filePath, JSON.stringify(contractData, null, 2));
+
+  console.log("📄 Contract info saved to:", filePath);
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error("❌ Error:", error);
-    process.exit(1);
-  });
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
