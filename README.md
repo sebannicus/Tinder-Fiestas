@@ -52,10 +52,6 @@ tinder-de-las-fiestas/
 ├── package.json
 └── ...
 
-yaml
-Copiar código
-
----
 
 ## 🚀 Requisitos Previos
 
@@ -73,13 +69,12 @@ Copiar código
 
 ### 1️⃣ Clonar el Repositorio
 
-```bash
 git clone https://github.com/sebannicus/tinder-de-las-fiestas.git
 cd tinder-de-las-fiestas
 2️⃣ Configurar el Backend (Django)
 Crear entorno virtual e instalar dependencias:
-bash
-Copiar código
+
+
 cd backend
 python -m venv venv
 venv\Scripts\activate   # En Windows
@@ -87,7 +82,7 @@ venv\Scripts\activate   # En Windows
 pip install -r requirements.txt
 Crear archivo .env en backend/ con el siguiente contenido:
 ini
-Copiar código
+
 # --- CONFIGURACIÓN DEL ENTORNO DJANGO ---
 DEBUG=True
 SECRET_KEY=django-insecure-tinder-fiesta-dev
@@ -97,26 +92,22 @@ ALLOWED_HOSTS=127.0.0.1,localhost
 RPC_URL=http://127.0.0.1:8545
 CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
 PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
 Aplicar migraciones y crear base de datos:
-bash
-Copiar código
 python manage.py makemigrations
 python manage.py migrate
 (Opcional pero recomendado) Restaurar entorno Django:
-bash
-Copiar código
+
 python tools/reset_environment.py
+
 Iniciar servidor Django:
-bash
-Copiar código
 python manage.py runserver
 📍 Abre: http://127.0.0.1:8000/
 
 3️⃣ Iniciar la Blockchain (Hardhat)
 Abrir una nueva terminal y ejecutar:
 
-bash
-Copiar código
+
 cd ../blockchain
 npm install
 npx hardhat node
@@ -124,18 +115,15 @@ Esto iniciará un nodo local de Ethereum con 20 cuentas de prueba (10000 ETH cad
 
 Luego, en otra terminal:
 
-bash
-Copiar código
+
 npx hardhat run scripts/deploy.js --network localhost
 Salida esperada:
 
-vbnet
-Copiar código
 ✅ Contract deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
 📄 Contract info saved to: blockchain/deployed/ProofOfPresence.json
+
+
 4️⃣ Iniciar el Frontend (Next.js + MapLibre)
-bash
-Copiar código
 cd ../frontend
 npm install
 npm run dev
@@ -152,16 +140,15 @@ GET/POST	/api/events/	Lista o crea eventos
 POST	/api/event_checkin/	Registra asistencia de un usuario a evento
 
 📦 Ejemplo de Petición POST /api/checkin/
-json
-Copiar código
+
 {
   "location": "La Serena",
   "private_key": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 }
+
 🧠 Flujo General del Sistema
-mermaid
-Copiar código
-flowchart LR
+
+
 A[Usuario] -->|POST /checkin| B[Django API]
 B -->|Blockchain TX| C[Hardhat Node]
 C -->|Hash TX| B
@@ -192,7 +179,5 @@ Sebastián Morales (sebannicus)
 💼 Fullstack Blockchain Developer
 💬 “Construyendo experiencias descentralizadas que conectan personas en tiempo real.”
 
-yaml
-Copiar código
 
 
