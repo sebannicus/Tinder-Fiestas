@@ -11,26 +11,26 @@ Estado general: 🟢 MVP 1.0 completado | 🧩 MVP 2.0 en desarrollo
 Construir una plataforma descentralizada capaz de registrar y visualizar la presencia de usuarios en distintos eventos en tiempo real, integrando Django REST, Hardhat + Solidity y Next.js + MapLibre GL.
 
 ✅ Historias completadas
-ID	Historia de Usuario	Descripción	Estado
-HU-01	Como usuario, quiero registrar mi presencia en un evento para dejar constancia en la blockchain.	Permite realizar un check-in y generar una transacción registrada en la red local Ethereum.	✅ Completada
-HU-02	Como administrador, quiero visualizar los registros de presencia en un mapa de calor.	Se integra MapLibre GL con los endpoints /api/heatmap/ y /api/stats/.	✅ Completada
-HU-03	Como backend developer, quiero conectar Django con Hardhat para registrar transacciones reales en la blockchain.	Comunicación establecida mediante Web3.py, leyendo ProofOfPresence.json.	✅ Completada
-HU-04	Como usuario, quiero visualizar estadísticas de actividad (lugares más visitados y cantidad de usuarios).	Endpoint /api/stats/ entrega datos agregados por ubicación y usuario.	✅ Completada
-HU-05	Como administrador, quiero poder restaurar el entorno completo (BD, migraciones y seeds).	Script reset_environment.py restablece entorno en un solo paso.	✅ Completada
-HU-06	Como usuario, quiero visualizar los eventos activos sobre el mapa interactivo.	Integración de modelos Event y EventAttendance con renderización en el mapa.	✅ Completada
-🌐 MVP 2.0 — Interacción real Web3 y experiencia de usuario
-🎯 Objetivo general
+ID	Historia de Usuario	                                                                                                                   Descripción	                                                             Estado
+HU-01	Como usuario, quiero registrar mi presencia en un evento para dejar constancia en la blockchain.	                Permite realizar un check-in y generar una transacción registrada en la red local Ethereum.	✅ Completada
+HU-02	Como administrador, quiero visualizar los registros de presencia en un mapa de calor.                            	Se integra MapLibre GL con los endpoints /api/heatmap/ y /api/stats/.	                      ✅ Completada
+HU-03	Como backend developer, quiero conectar Django con Hardhat para registrar transacciones reales en la blockchain.	Comunicación establecida mediante Web3.py, leyendo ProofOfPresence.json.	                  ✅ Completada
+HU-04	Como usuario, quiero visualizar estadísticas de actividad (lugares más visitados y cantidad de usuarios).	        Endpoint /api/stats/ entrega datos agregados por ubicación y usuario.	                      ✅ Completada
+HU-05	Como administrador, quiero poder restaurar el entorno completo (BD, migraciones y seeds).	                        Script reset_environment.py restablece entorno en un solo paso.	                            ✅ Completada
+HU-06	Como usuario, quiero visualizar los eventos activos sobre el mapa interactivo.	                                  Integración de modelos Event y EventAttendance con renderización en el mapa.	              ✅ Completada
+                                            🌐 MVP 2.0 — Interacción real Web3 y experiencia de usuario
+                                                    🎯 Objetivo general
 
 Permitir interacción directa del usuario con la blockchain mediante MetaMask, sin exponer claves privadas, y enriquecer la interfaz con funcionalidades sociales y estadísticas en tiempo real.
 
 🧩 Historias en desarrollo / próximas
-ID	Historia de Usuario	Descripción	Objetivo técnico	Estado
-HU-07	Como usuario, quiero conectar mi wallet MetaMask para autenticarme sin escribir mi clave privada.	Integrar ethers.js y detección de window.ethereum en el frontend.	Autenticación Web3 + firma local.	🔜 En desarrollo
-HU-08	Como usuario, quiero registrar mi asistencia en un evento usando mi wallet conectada.	Enviar transacción checkIn(location) firmada directamente desde MetaMask.	Registro Web3 sin backend intermedio.	🚧 Próxima
-HU-09	Como usuario, quiero ver en el mapa los eventos donde ya participé.	Filtro por wallet conectada y eventos asociados (/api/user_checkins/).	Vista personalizada en mapa.	🧩 Planeada
-HU-10	Como administrador, quiero filtrar eventos por ciudad o fecha en el mapa.	Extender API con parámetros de filtrado (city, date_range).	Mapa dinámico.	🧩 Planeada
-HU-11	Como usuario, quiero tener un panel de perfil donde pueda ver mi historial de eventos.	Nueva ruta /perfil + endpoint /api/user_events/.	Panel de usuario.	🧩 Planeada
-HU-12	Como administrador, quiero acceder a un panel de métricas visuales desde Django Admin.	Integrar gráficos con Chart.js o Plotly y modelo EventAnalytics.	Dashboard visual.	🧩 Planeada
+ID	Historia de Usuario	                                                                                                        Descripción	                                                              Objetivo técnico	                    Estado
+HU-07	Como usuario, quiero conectar mi wallet MetaMask para autenticarme sin escribir mi clave privada.	                        Integrar ethers.js y detección de window.ethereum en el frontend.   	Autenticación Web3 + firma local.      	🔜 En desarrollo
+HU-08	Como usuario, quiero registrar mi asistencia en un evento usando mi wallet conectada.	                                    Enviar transacción checkIn(location) firmada directamente desde MetaMask.	Registro Web3 sin backend intermedio.🚧 Próxima
+HU-09	Como usuario, quiero ver en el mapa los eventos donde ya participé.	                                                      Filtro por wallet conectada y eventos asociados (/api/user_checkins/).	Vista personalizada en mapa.	        🧩 Planeada
+HU-10	Como administrador, quiero filtrar eventos por ciudad o fecha en el mapa.	                                                Extender API con parámetros de filtrado (city, date_range).               	Mapa dinámico.	                  🧩 Planeada
+HU-11	Como usuario, quiero tener un panel de perfil donde pueda ver mi historial de eventos.	                                  Nueva ruta /perfil + endpoint /api/user_events/.	                           Panel de usuario.               	🧩 Planeada
+HU-12	Como administrador, quiero acceder a un panel de métricas visuales desde Django Admin.                                   	Integrar gráficos con Chart.js o Plotly y modelo EventAnalytics.          	Dashboard visual.	                🧩 Planeada
 ☁️ MVP 3.0 — Despliegue, persistencia y escalabilidad
 🎯 Objetivo general
 
