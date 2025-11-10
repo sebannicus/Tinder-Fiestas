@@ -26,3 +26,4 @@ os.system("python manage.py makemigrations blockchain_api")
 os.system("python manage.py migrate")
 
 print("✅ Entorno restaurado correctamente.")
+
