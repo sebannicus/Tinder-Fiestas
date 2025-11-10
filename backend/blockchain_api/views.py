@@ -4,6 +4,8 @@ from rest_framework import status
 from django.http import JsonResponse
 from web3 import Web3
 import uuid
+from eth_account.messages import encode_defunct
+from .services.auth_service import verify_signature
 
 from .blockchain_service import get_last_location, check_in
 from .analytics_service import get_heatmap_data, get_activity_stats
@@ -33,7 +35,7 @@ def obtener_ubicacion(request, address):
         return Response({"status": "error", "message": str(e)}, status=500)
 
 
-# ✅ POST: registrar un nuevo check-in (geolocalización)
+# ✅ POST: registrar un nuevo check-in (geolocalización general)
 @api_view(["POST"])
 def register_checkin(request):
     """
@@ -137,7 +139,7 @@ def mapa_completo(request):
     })
 
 
-# ✅ POST: registrar asistencia a un evento (event_checkin)
+# ✅ POST: registrar asistencia a un evento
 @api_view(["POST"])
 def event_checkin(request):
     """
@@ -145,9 +147,9 @@ def event_checkin(request):
     Si no hay fondos en la wallet, simula el tx_hash para permitir el registro local.
     """
     event_id = request.data.get("event_id")
-    private_key = request.data.get("private_key")
+    wallet_address = request.data.get("wallet_address")
 
-    if not event_id or not private_key:
+    if not event_id or not wallet_address:
         return Response({"status": "error", "message": "Faltan parámetros"}, status=400)
 
     try:
@@ -155,12 +157,8 @@ def event_checkin(request):
     except Event.DoesNotExist:
         return Response({"status": "error", "message": "Evento no encontrado"}, status=404)
 
-    # 🔗 Conectar al nodo local y obtener wallet
-    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
-    user_address = w3.eth.account.from_key(private_key).address
-
-    # 👤 Crear o recuperar usuario
-    user, _ = UserProfile.objects.get_or_create(wallet_address=user_address)
+    # 👤 Crear o recuperar usuario local
+    user, _ = UserProfile.objects.get_or_create(wallet_address=wallet_address)
 
     # 🚫 Evitar asistencia duplicada
     if EventAttendance.objects.filter(user=user, event=event).exists():
@@ -169,13 +167,8 @@ def event_checkin(request):
             "message": "El usuario ya asistió a este evento"
         }, status=400)
 
-    # ⚙️ Intentar registrar en blockchain
-    try:
-        tx_hash = check_in(event.location, private_key)
-    except Exception as e:
-        print(f"⚠️ Error en blockchain: {e}")
-        # Simulación local si no hay fondos o RPC error
-        tx_hash = f"SIMULATED_TX_{uuid.uuid4().hex[:10]}"
+    # ⚙️ Simular TX hash (sin necesidad de firmar)
+    tx_hash = f"SIMULATED_TX_{uuid.uuid4().hex[:10]}"
 
     # 💾 Guardar asistencia local
     EventAttendance.objects.create(
@@ -190,3 +183,58 @@ def event_checkin(request):
         "tx_hash": tx_hash,
         "wallet": user.wallet_address
     })
+
+
+# ✅ POST: autenticación mediante MetaMask
+@api_view(["POST"])
+def login_wallet(request):
+    """
+    Autentica un usuario mediante firma con MetaMask.
+    Recibe: { "address": "0x...", "signature": "...", "nonce": "..." }
+    """
+    try:
+        data = request.data
+        address = data.get("address")
+        signature = data.get("signature")
+        nonce = data.get("nonce")
+
+        if not all([address, signature, nonce]):
+            return Response(
+                {"status": "error", "message": "Faltan parámetros"},
+                status=400
+            )
+
+        # ✅ Crear objeto mensaje firmado (según formato EIP-191)
+        message = encode_defunct(text=nonce)
+
+        # ✅ Verificar firma usando Web3.py
+        w3 = Web3()
+        recovered_address = w3.eth.account.recover_message(
+            message,
+            signature=signature
+        )
+
+        if recovered_address.lower() != address.lower():
+            return Response(
+                {"status": "error", "message": "Firma inválida"},
+                status=401
+            )
+
+        # ✅ Crear o recuperar usuario local
+        user, created = UserProfile.objects.get_or_create(wallet_address=address)
+
+        return Response({
+            "status": "success",
+            "message": "Wallet autenticada correctamente",
+            "user": {
+                "wallet_address": user.wallet_address,
+                "created": created
+            }
+        })
+
+    except Exception as e:
+        print(f"⚠️ Error en autenticación: {e}")
+        return Response(
+            {"status": "error", "message": str(e)},
+            status=500
+        )
