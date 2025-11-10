@@ -1,0 +1,56 @@
+🧾 Historias de Usuario — Tinder de las Fiestas
+
+Autor: Sebastián Morales (sebannicus)
+Versión: 1.0
+Última actualización: 07/11/2025
+Estado general: 🟢 MVP 1.0 completado | 🧩 MVP 2.0 en desarrollo
+
+🧱 MVP 1.0 — Plataforma base funcional
+🎯 Objetivo general
+
+Construir una plataforma descentralizada capaz de registrar y visualizar la presencia de usuarios en distintos eventos en tiempo real, integrando Django REST, Hardhat + Solidity y Next.js + MapLibre GL.
+
+✅ Historias completadas
+ID	Historia de Usuario	Descripción	Estado
+HU-01	Como usuario, quiero registrar mi presencia en un evento para dejar constancia en la blockchain.	Permite realizar un check-in y generar una transacción registrada en la red local Ethereum.	✅ Completada
+HU-02	Como administrador, quiero visualizar los registros de presencia en un mapa de calor.	Se integra MapLibre GL con los endpoints /api/heatmap/ y /api/stats/.	✅ Completada
+HU-03	Como backend developer, quiero conectar Django con Hardhat para registrar transacciones reales en la blockchain.	Comunicación establecida mediante Web3.py, leyendo ProofOfPresence.json.	✅ Completada
+HU-04	Como usuario, quiero visualizar estadísticas de actividad (lugares más visitados y cantidad de usuarios).	Endpoint /api/stats/ entrega datos agregados por ubicación y usuario.	✅ Completada
+HU-05	Como administrador, quiero poder restaurar el entorno completo (BD, migraciones y seeds).	Script reset_environment.py restablece entorno en un solo paso.	✅ Completada
+HU-06	Como usuario, quiero visualizar los eventos activos sobre el mapa interactivo.	Integración de modelos Event y EventAttendance con renderización en el mapa.	✅ Completada
+🌐 MVP 2.0 — Interacción real Web3 y experiencia de usuario
+🎯 Objetivo general
+
+Permitir interacción directa del usuario con la blockchain mediante MetaMask, sin exponer claves privadas, y enriquecer la interfaz con funcionalidades sociales y estadísticas en tiempo real.
+
+🧩 Historias en desarrollo / próximas
+ID	Historia de Usuario	Descripción	Objetivo técnico	Estado
+HU-07	Como usuario, quiero conectar mi wallet MetaMask para autenticarme sin escribir mi clave privada.	Integrar ethers.js y detección de window.ethereum en el frontend.	Autenticación Web3 + firma local.	🔜 En desarrollo
+HU-08	Como usuario, quiero registrar mi asistencia en un evento usando mi wallet conectada.	Enviar transacción checkIn(location) firmada directamente desde MetaMask.	Registro Web3 sin backend intermedio.	🚧 Próxima
+HU-09	Como usuario, quiero ver en el mapa los eventos donde ya participé.	Filtro por wallet conectada y eventos asociados (/api/user_checkins/).	Vista personalizada en mapa.	🧩 Planeada
+HU-10	Como administrador, quiero filtrar eventos por ciudad o fecha en el mapa.	Extender API con parámetros de filtrado (city, date_range).	Mapa dinámico.	🧩 Planeada
+HU-11	Como usuario, quiero tener un panel de perfil donde pueda ver mi historial de eventos.	Nueva ruta /perfil + endpoint /api/user_events/.	Panel de usuario.	🧩 Planeada
+HU-12	Como administrador, quiero acceder a un panel de métricas visuales desde Django Admin.	Integrar gráficos con Chart.js o Plotly y modelo EventAnalytics.	Dashboard visual.	🧩 Planeada
+☁️ MVP 3.0 — Despliegue, persistencia y escalabilidad
+🎯 Objetivo general
+
+Llevar la plataforma a un entorno productivo, automatizar el mantenimiento y garantizar escalabilidad horizontal.
+
+ID	Historia de Usuario	Descripción	Objetivo técnico	Estado
+HU-13	Como devops, quiero desplegar todo el proyecto en AWS EC2 con persistencia y reinicio automático.	Configurar EC2, Docker, Nginx y Gunicorn para backend y frontend.	Infraestructura persistente.	🧩 Planeada
+HU-14	Como usuario, quiero usar una app móvil para registrar mi check-in desde el celular.	Desarrollar cliente React Native o Expo conectado al mismo backend.	Experiencia móvil.	🧭 Exploratoria
+HU-15	Como equipo, quiero automatizar tests y despliegues.	GitHub Actions + test de integración Django + Hardhat.	CI/CD Web3.	🧭 Exploratoria
+🧠 MVP 2.x — Uso de IA (Codex / Copilot / GPT)
+Fase	Aplicación	Descripción
+2.2+	Autocompletado de funciones Web3	Generación automática de hooks y contratos Solidity auxiliares.
+2.3	Pruebas unitarias automáticas	Generar tests Django y React con prompts naturales.
+2.4	Refactorización inteligente	Sugerencias de patrones SOLID y refactor basado en contexto.
+3.0	DevOps IA Assistant	Generación de scripts de despliegue y monitoreo inteligente.
+🧩 Estado general del proyecto
+Área	Descripción	Estado
+Blockchain	Contrato ProofOfPresence.sol desplegado en red local con Hardhat.	✅
+Backend	Django REST Framework + Web3.py funcionando con base SQLite local.	✅
+Frontend	Next.js + Tailwind + MapLibre GL para visualización interactiva.	✅
+Web3 Auth (MetaMask)	Integración ethers.js en progreso.	🟡
+Panel de métricas	En diseño.	⚪
+Despliegue AWS EC2	Planificado.	⚪
