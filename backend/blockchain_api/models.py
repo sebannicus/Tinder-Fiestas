@@ -44,3 +44,13 @@ class EventAttendance(models.Model):
 
     def __str__(self):
         return f"{self.user.wallet_address} asistió a {self.event.name}"
+
+class WalletUser(models.Model):
+    """
+    Representa a un usuario autenticado con MetaMask.
+    """
+    address = models.CharField(max_length=255, unique=True)
+    last_login = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.address

@@ -3,16 +3,20 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import Map, { Source, Layer, Marker, Popup } from "react-map-gl/maplibre";
 import { useEffect, useState } from "react";
+import { ethers } from "ethers";
 
 export default function HeatmapPage() {
+  // 🔹 Estados globales
   const [points, setPoints] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [txResult, setTxResult] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const [authStatus, setAuthStatus] = useState<string>("Desconectado");
 
-  // 🔄 Carga o recarga los datos del backend
+  // 🔄 Carga de datos desde el backend
   async function reloadData() {
     try {
       const [heatmapRes, statsRes, eventsRes] = await Promise.all([
@@ -28,12 +32,11 @@ export default function HeatmapPage() {
     }
   }
 
-  // 🧠 Cargar datos al iniciar
   useEffect(() => {
     reloadData();
   }, []);
 
-  // 🌎 Construcción del GeoJSON del heatmap
+  // 🌎 Generar capa GeoJSON del heatmap
   const geojson = {
     type: "FeatureCollection",
     features: points
@@ -48,8 +51,53 @@ export default function HeatmapPage() {
       })),
   };
 
+  // 🦊 Conectar MetaMask y autenticar en backend
+  async function loginWithMetaMask() {
+    try {
+      if (!window.ethereum) {
+        alert("MetaMask no está instalado en tu navegador");
+        return;
+      }
+
+      // 1️⃣ Conexión a MetaMask
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const address = await signer.getAddress();
+
+      // 2️⃣ Firmar nonce temporal
+      const nonce = "TinderFiestas_" + Date.now();
+      const signature = await signer.signMessage(nonce);
+
+      // 3️⃣ Enviar autenticación al backend (se implementará en HU-08)
+      const response = await fetch("http://127.0.0.1:8000/api/login_wallet/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address, signature, nonce }),
+      });
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        setWalletAddress(address);
+        setAuthStatus("Conectado ✅");
+        alert("✅ Wallet conectada: " + address);
+      } else {
+        setAuthStatus("Error en autenticación");
+        console.error(data.message);
+      }
+    } catch (err) {
+      console.error("⚠️ Error MetaMask:", err);
+      setAuthStatus("Error en conexión");
+    }
+  }
+
   // 🪩 Registrar asistencia en blockchain
   async function handleAsistir(event: any) {
+    if (!walletAddress) {
+      alert("Conecta primero tu wallet MetaMask 🦊");
+      return;
+    }
+
     setLoading(true);
     setTxResult(null);
 
@@ -59,8 +107,7 @@ export default function HeatmapPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event_id: event.id,
-          private_key:
-            "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", // Cuenta #1 de Hardhat
+          wallet_address: walletAddress, // 👈 ahora enviamos la wallet conectada
         }),
       });
 
@@ -68,7 +115,7 @@ export default function HeatmapPage() {
 
       if (data.status === "success") {
         setTxResult(`✅ Asistencia registrada. TX: ${data.tx_hash}`);
-        await reloadData(); // 🔄 Refresca datos tras éxito
+        await reloadData();
       } else {
         setTxResult(
           `⚠️ Error: ${data.message || "No se pudo registrar la asistencia"}`
@@ -82,15 +129,30 @@ export default function HeatmapPage() {
     }
   }
 
+  // 🖼️ Render principal
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-gray-900 text-white">
       {/* 📊 Panel lateral */}
       <div className="lg:w-1/3 p-6 overflow-y-auto border-r border-gray-700">
         <h1 className="text-2xl font-bold mb-4">🔥 Mapa de Actividad</h1>
 
+        {/* 🦊 Conexión MetaMask */}
+        <div className="mt-4">
+          <button
+            onClick={loginWithMetaMask}
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 w-full"
+          >
+            {walletAddress ? "🔗 Wallet Conectada" : "🦊 Conectar Wallet MetaMask"}
+          </button>
+          {walletAddress && (
+            <p className="mt-2 text-sm text-gray-400 break-all">{walletAddress}</p>
+          )}
+        </div>
+
+        {/* 📈 Estadísticas */}
         {stats ? (
           <>
-            <p>
+            <p className="mt-4">
               Total check-ins: <strong>{stats.total_checkins}</strong>
             </p>
             <p>
@@ -109,9 +171,10 @@ export default function HeatmapPage() {
             </ul>
           </>
         ) : (
-          <p>Cargando estadísticas...</p>
+          <p className="mt-4">Cargando estadísticas...</p>
         )}
 
+        {/* 🎉 Eventos activos */}
         <h2 className="mt-8 text-lg font-semibold">🎉 Eventos activos</h2>
         <ul className="mt-2 space-y-2">
           {events.map((ev: any) => (
@@ -125,7 +188,7 @@ export default function HeatmapPage() {
           ))}
         </ul>
 
-        {/* Resultado TX */}
+        {/* 🧾 Resultado TX */}
         {txResult && (
           <div className="mt-4 p-3 bg-gray-800 rounded text-sm border border-gray-700">
             <span
