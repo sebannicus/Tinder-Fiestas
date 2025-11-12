@@ -5,8 +5,13 @@ import Map, { Source, Layer, Marker, Popup } from "react-map-gl/maplibre";
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 
+// ✅ Ruta relativa al ABI (copiado desde blockchain/deployed/)
+import ProofOfPresenceABI from "@/contracts/ProofOfPresence.json";
+
 export default function HeatmapPage() {
-  // 🔹 Estados globales
+  // ------------------------
+  // 🔹 Estados del componente
+  // ------------------------
   const [points, setPoints] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -16,7 +21,9 @@ export default function HeatmapPage() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [authStatus, setAuthStatus] = useState<string>("Desconectado");
 
-  // 🔄 Carga de datos desde el backend
+  // ------------------------
+  // 🔄 Carga inicial de datos
+  // ------------------------
   async function reloadData() {
     try {
       const [heatmapRes, statsRes, eventsRes] = await Promise.all([
@@ -36,7 +43,9 @@ export default function HeatmapPage() {
     reloadData();
   }, []);
 
-  // 🌎 Generar capa GeoJSON del heatmap
+  // ------------------------
+  // 🌎 Capa GeoJSON del Heatmap
+  // ------------------------
   const geojson = {
     type: "FeatureCollection",
     features: points
@@ -51,7 +60,9 @@ export default function HeatmapPage() {
       })),
   };
 
-  // 🦊 Conectar MetaMask y autenticar en backend
+  // ------------------------
+  // 🦊 Conectar MetaMask
+  // ------------------------
   async function loginWithMetaMask() {
     try {
       if (!window.ethereum) {
@@ -59,16 +70,14 @@ export default function HeatmapPage() {
         return;
       }
 
-      // 1️⃣ Conexión a MetaMask
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const address = await signer.getAddress();
 
-      // 2️⃣ Firmar nonce temporal
+      // 🔏 Firmar nonce para autenticación
       const nonce = "TinderFiestas_" + Date.now();
       const signature = await signer.signMessage(nonce);
 
-      // 3️⃣ Enviar autenticación al backend (se implementará en HU-08)
       const response = await fetch("http://127.0.0.1:8000/api/login_wallet/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -80,7 +89,7 @@ export default function HeatmapPage() {
       if (data.status === "success") {
         setWalletAddress(address);
         setAuthStatus("Conectado ✅");
-        alert("✅ Wallet conectada: " + address);
+        alert(`✅ Wallet conectada: ${address}`);
       } else {
         setAuthStatus("Error en autenticación");
         console.error(data.message);
@@ -91,10 +100,17 @@ export default function HeatmapPage() {
     }
   }
 
+  // ------------------------
   // 🪩 Registrar asistencia en blockchain
+  // ------------------------
   async function handleAsistir(event: any) {
+    if (!window.ethereum) {
+      alert("MetaMask no está instalado");
+      return;
+    }
+
     if (!walletAddress) {
-      alert("Conecta primero tu wallet MetaMask 🦊");
+      alert("Por favor conecta tu wallet primero 🦊");
       return;
     }
 
@@ -102,34 +118,46 @@ export default function HeatmapPage() {
     setTxResult(null);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/event_checkin/", {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+
+      // ✅ Instancia del contrato desplegado
+      const contract = new ethers.Contract(
+        ProofOfPresenceABI.address,
+        ProofOfPresenceABI.abi,
+        signer
+      );
+
+      console.log("📡 Enviando transacción...");
+      const tx = await contract.checkInEvent(event.id, event.location);
+      setTxResult("⏳ Transacción enviada. Esperando confirmación...");
+
+      const receipt = await tx.wait();
+      console.log("✅ TX confirmada:", receipt);
+
+      // 🧾 Registrar también en el backend (persistencia local)
+      await fetch("http://127.0.0.1:8000/api/event_checkin/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event_id: event.id,
-          wallet_address: walletAddress, // 👈 ahora enviamos la wallet conectada
+          wallet_address: walletAddress,
         }),
       });
 
-      const data = await response.json();
-
-      if (data.status === "success") {
-        setTxResult(`✅ Asistencia registrada. TX: ${data.tx_hash}`);
-        await reloadData();
-      } else {
-        setTxResult(
-          `⚠️ Error: ${data.message || "No se pudo registrar la asistencia"}`
-        );
-      }
-    } catch (err) {
-      console.error("⚠️ Error:", err);
-      setTxResult("⚠️ Error de conexión con el servidor.");
+      setTxResult(`✅ Asistencia confirmada on-chain. TX: ${tx.hash}`);
+      await reloadData();
+    } catch (err: any) {
+      console.error("⚠️ Error en la transacción:", err);
+      setTxResult(`⚠️ Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
   }
 
+  // ------------------------
   // 🖼️ Render principal
+  // ------------------------
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-gray-900 text-white">
       {/* 📊 Panel lateral */}
