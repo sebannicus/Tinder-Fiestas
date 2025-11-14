@@ -4,7 +4,7 @@
     {
       "type": "event",
       "anonymous": false,
-      "name": "EventCheckedIn",
+      "name": "CheckIn",
       "inputs": [
         {
           "type": "address",
@@ -12,18 +12,8 @@
           "indexed": true
         },
         {
-          "type": "uint256",
-          "name": "eventId",
-          "indexed": true
-        },
-        {
           "type": "string",
           "name": "location",
-          "indexed": false
-        },
-        {
-          "type": "uint256",
-          "name": "timestamp",
           "indexed": false
         }
       ]
@@ -43,24 +33,7 @@
     },
     {
       "type": "function",
-      "name": "checkInEvent",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "_eventId"
-        },
-        {
-          "type": "string",
-          "name": "_location"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "getUserCheckIns",
+      "name": "getLastLocation",
       "constant": true,
       "stateMutability": "view",
       "payable": false,
@@ -72,32 +45,14 @@
       ],
       "outputs": [
         {
-          "type": "tuple[]",
-          "name": "",
-          "components": [
-            {
-              "type": "address",
-              "name": "user"
-            },
-            {
-              "type": "string",
-              "name": "location"
-            },
-            {
-              "type": "uint256",
-              "name": "timestamp"
-            },
-            {
-              "type": "uint256",
-              "name": "eventId"
-            }
-          ]
+          "type": "string",
+          "name": ""
         }
       ]
     },
     {
       "type": "function",
-      "name": "userCheckIns",
+      "name": "lastCheckIn",
       "constant": true,
       "stateMutability": "view",
       "payable": false,
@@ -105,28 +60,12 @@
         {
           "type": "address",
           "name": ""
-        },
-        {
-          "type": "uint256",
-          "name": ""
         }
       ],
       "outputs": [
         {
-          "type": "address",
-          "name": "user"
-        },
-        {
           "type": "string",
-          "name": "location"
-        },
-        {
-          "type": "uint256",
-          "name": "timestamp"
-        },
-        {
-          "type": "uint256",
-          "name": "eventId"
+          "name": ""
         }
       ]
     }
