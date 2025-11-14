@@ -1,6 +1,10 @@
 {
+  "name": "tinder-de-las-fiestas-blockchain",
+  "version": "1.0.0",
+  "private": true,
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "hardhat": "^2.26.0"
+    "@nomicfoundation/hardhat-toolbox": "^3.0.0",
+    "hardhat": "^2.22.5",
+    "dotenv": "^16.4.5"
   }
 }

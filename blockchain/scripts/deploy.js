@@ -2,6 +2,8 @@ const fs = require("fs");
 const path = require("path");
 
 async function main() {
+  console.log("🚀 Deploying ProofOfPresence contract...");
+
   const ProofOfPresence = await ethers.getContractFactory("ProofOfPresence");
   const pop = await ProofOfPresence.deploy();
   await pop.waitForDeployment();
@@ -11,11 +13,11 @@ async function main() {
 
   // Crear objeto con la info del contrato
   const contractData = {
-    address: address,
-    abi: JSON.parse(pop.interface.formatJson())
+    address,
+    abi: JSON.parse(pop.interface.formatJson()),
   };
 
-  // Ruta para guardar el JSON
+  // Guardar en carpeta /deployed
   const dir = path.resolve(__dirname, "../deployed");
   const filePath = path.join(dir, "ProofOfPresence.json");
 
@@ -24,11 +26,10 @@ async function main() {
   }
 
   fs.writeFileSync(filePath, JSON.stringify(contractData, null, 2));
-
   console.log("📄 Contract info saved to:", filePath);
 }
 
 main().catch((error) => {
-  console.error(error);
+  console.error("❌ Error deploying contract:", error);
   process.exitCode = 1;
 });
