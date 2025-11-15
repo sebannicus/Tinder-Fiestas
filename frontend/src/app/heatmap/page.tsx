@@ -5,13 +5,16 @@ import Map, { Source, Layer, Marker, Popup } from "react-map-gl/maplibre";
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 
-// ✅ Ruta relativa al ABI (copiado desde blockchain/deployed/)
 import ProofOfPresenceABI from "@/contracts/ProofOfPresence.json";
 
+// -----------------------------------------
+// 🔧 Configuración
+// -----------------------------------------
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const HARDHAT_CHAIN_ID = 31337; // Hardhat local
+const STRICT_CHAIN = process.env.NEXT_PUBLIC_STRICT_CHAIN === "true"; // Validación opcional
+
 export default function HeatmapPage() {
-  // ------------------------
-  // 🔹 Estados del componente
-  // ------------------------
   const [points, setPoints] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
@@ -19,23 +22,31 @@ export default function HeatmapPage() {
   const [loading, setLoading] = useState(false);
   const [txResult, setTxResult] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
-  const [authStatus, setAuthStatus] = useState<string>("Desconectado");
+  const [error, setError] = useState<string | null>(null);
 
-  // ------------------------
-  // 🔄 Carga inicial de datos
-  // ------------------------
+  // -----------------------------------------
+  // 🔄 Cargar datos iniciales
+  // -----------------------------------------
   async function reloadData() {
     try {
+      setError(null);
+
       const [heatmapRes, statsRes, eventsRes] = await Promise.all([
-        fetch("http://127.0.0.1:8000/api/heatmap/"),
-        fetch("http://127.0.0.1:8000/api/stats/"),
-        fetch("http://127.0.0.1:8000/api/events/"),
+        fetch(`${API_URL}/api/heatmap/`),
+        fetch(`${API_URL}/api/stats/`),
+        fetch(`${API_URL}/api/events/`),
       ]);
+
+      if (!heatmapRes.ok || !statsRes.ok || !eventsRes.ok) {
+        throw new Error("Error cargando datos desde el backend");
+      }
+
       setPoints(await heatmapRes.json());
       setStats(await statsRes.json());
       setEvents(await eventsRes.json());
     } catch (err) {
       console.error("❌ Error al refrescar datos:", err);
+      setError("No se pudieron cargar los datos del backend");
     }
   }
 
@@ -43,9 +54,9 @@ export default function HeatmapPage() {
     reloadData();
   }, []);
 
-  // ------------------------
-  // 🌎 Capa GeoJSON del Heatmap
-  // ------------------------
+  // -----------------------------------------
+  // 🌎 GeoJSON para el Heatmap
+  // -----------------------------------------
   const geojson = {
     type: "FeatureCollection",
     features: points
@@ -60,25 +71,44 @@ export default function HeatmapPage() {
       })),
   };
 
-  // ------------------------
-  // 🦊 Conectar MetaMask
-  // ------------------------
+  // -----------------------------------------
+  // 🦊 Conexión MetaMask
+  // -----------------------------------------
   async function loginWithMetaMask() {
     try {
+      setError(null);
+
       if (!window.ethereum) {
-        alert("MetaMask no está instalado en tu navegador");
+        setError("MetaMask no está instalado");
         return;
       }
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+
+      // 1. Validar red
+      const network = await provider.getNetwork();
+
+      if (STRICT_CHAIN) {
+        if (Number(network.chainId) !== HARDHAT_CHAIN_ID) {
+          setError(
+            `⚠️ Conéctate a Hardhat Local (chainId ${HARDHAT_CHAIN_ID}). Red actual: ${network.chainId}`
+          );
+          return;
+        }
+      } else {
+        console.warn("⚠️ Strict chain desactivado. Aceptando cualquier red.");
+      }
+
+      // 2. Obtener address
       const address = await signer.getAddress();
 
-      // 🔏 Firmar nonce para autenticación
+      // 3. Firmar mensaje
       const nonce = "TinderFiestas_" + Date.now();
       const signature = await signer.signMessage(nonce);
 
-      const response = await fetch("http://127.0.0.1:8000/api/login_wallet/", {
+      // 4. Enviar al backend
+      const response = await fetch(`${API_URL}/api/login_wallet/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, signature, nonce }),
@@ -88,161 +118,172 @@ export default function HeatmapPage() {
 
       if (data.status === "success") {
         setWalletAddress(address);
-        setAuthStatus("Conectado ✅");
-        alert(`✅ Wallet conectada: ${address}`);
+        setTxResult(`✅ Wallet conectada: ${address.substring(0, 6)}...${address.substring(38)}`);
       } else {
-        setAuthStatus("Error en autenticación");
-        console.error(data.message);
+        setError(data.error || "Error de autenticación");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("⚠️ Error MetaMask:", err);
-      setAuthStatus("Error en conexión");
+      setError(`Error: ${err.message}`);
     }
   }
 
-  // ------------------------
-  // 🪩 Registrar asistencia en blockchain
-  // ------------------------
+  // -----------------------------------------
+  // 🪩 Check-in a evento
+  // -----------------------------------------
   async function handleAsistir(event: any) {
-    if (!window.ethereum) {
-      alert("MetaMask no está instalado");
-      return;
-    }
-
     if (!walletAddress) {
-      alert("Por favor conecta tu wallet primero 🦊");
+      setError("Conecta tu wallet primero 🦊");
       return;
     }
 
     setLoading(true);
     setTxResult(null);
+    setError(null);
 
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
-      // ✅ Instancia del contrato desplegado
       const contract = new ethers.Contract(
         ProofOfPresenceABI.address,
         ProofOfPresenceABI.abi,
         signer
       );
 
-      console.log("📡 Enviando transacción...");
+      // ----- On-chain -----
+      setTxResult("⏳ Firmando transacción con MetaMask...");
       const tx = await contract.checkInEvent(event.id, event.location);
-      setTxResult("⏳ Transacción enviada. Esperando confirmación...");
 
+      setTxResult(`⏳ TX enviada: ${tx.hash.substring(0, 10)}... esperando confirmación...`);
       const receipt = await tx.wait();
-      console.log("✅ TX confirmada:", receipt);
 
-      // 🧾 Registrar también en el backend (persistencia local)
-      await fetch("http://127.0.0.1:8000/api/event_checkin/", {
+      if (receipt.status !== 1) {
+        throw new Error("La transacción falló en blockchain");
+      }
+
+      // ----- Backend -----
+      setTxResult("✅ TX confirmada. Guardando en backend...");
+
+      const response = await fetch(`${API_URL}/api/event_checkin/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event_id: event.id,
           wallet_address: walletAddress,
+          tx_hash: tx.hash,
         }),
       });
 
-      setTxResult(`✅ Asistencia confirmada on-chain. TX: ${tx.hash}`);
-      await reloadData();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error al guardar en backend");
+
+      setTxResult(
+        `🎉 Check-in completado!\n` +
+          `TX: ${tx.hash.substring(0, 12)}...\n` +
+          `Bloque: ${receipt.blockNumber}`
+      );
+
+      reloadData();
     } catch (err: any) {
-      console.error("⚠️ Error en la transacción:", err);
-      setTxResult(`⚠️ Error: ${err.message}`);
+      console.error("⚠️ Error:", err);
+
+      if (err.code === 4001) setError("⚠️ Transacción cancelada por el usuario");
+      else if (err.code === -32603) setError("⚠️ Sin fondos para gas");
+      else setError(`⚠️ Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
   }
 
-  // ------------------------
-  // 🖼️ Render principal
-  // ------------------------
+  // -----------------------------------------
+  // 🖼️ Vista
+  // -----------------------------------------
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-gray-900 text-white">
-      {/* 📊 Panel lateral */}
+      {/* Panel lateral */}
       <div className="lg:w-1/3 p-6 overflow-y-auto border-r border-gray-700">
-        <h1 className="text-2xl font-bold mb-4">🔥 Mapa de Actividad</h1>
+        <h1 className="text-2xl font-bold mb-4">🔥 Tinder de Fiestas</h1>
 
-        {/* 🦊 Conexión MetaMask */}
-        <div className="mt-4">
-          <button
-            onClick={loginWithMetaMask}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 w-full"
-          >
-            {walletAddress ? "🔗 Wallet Conectada" : "🦊 Conectar Wallet MetaMask"}
-          </button>
-          {walletAddress && (
-            <p className="mt-2 text-sm text-gray-400 break-all">{walletAddress}</p>
-          )}
-        </div>
+        {/* Conectar wallet */}
+        <button
+          onClick={loginWithMetaMask}
+          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 w-full transition disabled:bg-gray-600"
+          disabled={!!walletAddress}
+        >
+          {walletAddress
+            ? `🔗 ${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}`
+            : "🦊 Conectar Wallet MetaMask"}
+        </button>
 
-        {/* 📈 Estadísticas */}
-        {stats ? (
-          <>
-            <p className="mt-4">
-              Total check-ins: <strong>{stats.total_checkins}</strong>
-            </p>
-            <p>
-              Usuarios únicos: <strong>{stats.unique_users}</strong>
-            </p>
-
-            <h2 className="mt-6 text-lg font-semibold">
-              Lugares más visitados
-            </h2>
-            <ul className="mt-2 space-y-1">
-              {stats.top_locations.map((loc: any, i: number) => (
-                <li key={i} className="text-gray-300">
-                  {loc.location} — {loc.visits} visitas
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p className="mt-4">Cargando estadísticas...</p>
+        {error && (
+          <div className="mt-4 p-3 bg-red-900/50 border border-red-700 rounded text-sm">
+            <p className="text-red-200">{error}</p>
+          </div>
         )}
 
-        {/* 🎉 Eventos activos */}
-        <h2 className="mt-8 text-lg font-semibold">🎉 Eventos activos</h2>
-        <ul className="mt-2 space-y-2">
-          {events.map((ev: any) => (
-            <li
-              key={ev.id}
-              className="p-2 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer"
-              onClick={() => setSelectedEvent(ev)}
-            >
-              <strong>{ev.name}</strong> — {ev.location}
-            </li>
-          ))}
-        </ul>
-
-        {/* 🧾 Resultado TX */}
         {txResult && (
-          <div className="mt-4 p-3 bg-gray-800 rounded text-sm border border-gray-700">
-            <span
-              className={
-                txResult.startsWith("✅") ? "text-green-400" : "text-red-400"
-              }
-            >
+          <div className="mt-4 p-3 bg-gray-800 rounded text-sm border border-gray-700 whitespace-pre-line">
+            <span className={txResult.startsWith("🎉") || txResult.startsWith("✅") ? "text-green-400" : "text-blue-400"}>
               {txResult}
             </span>
           </div>
         )}
+
+        {/* Estadísticas */}
+        {stats && stats.status === "success" ? (
+          <div className="mt-6">
+            <h2 className="text-lg font-semibold mb-2">📊 Estadísticas</h2>
+
+            <p>Total check-ins: <strong>{stats.total_checkins}</strong></p>
+            <p>Usuarios únicos: <strong>{stats.unique_users}</strong></p>
+
+            {stats.top_locations?.length > 0 && (
+              <>
+                <h3 className="mt-4 font-semibold">🔝 Top Lugares</h3>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {stats.top_locations.map((loc: any, i: number) => (
+                    <li key={i} className="text-gray-300">
+                      {loc.location} — {loc.visits} visitas
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        ) : (
+          <p className="mt-4 text-gray-400">Cargando estadísticas...</p>
+        )}
+
+        {/* Eventos */}
+        <h2 className="text-lg font-semibold mt-8">🎉 Eventos</h2>
+        <ul className="mt-2 space-y-2">
+          {events.map((ev: any) => (
+            <li
+              key={ev.id}
+              className="p-3 rounded bg-gray-800 hover:bg-gray-700 cursor-pointer transition"
+              onClick={() => setSelectedEvent(ev)}
+            >
+              <strong>{ev.name}</strong>
+              <span className="block text-gray-400 text-sm">{ev.location}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      {/* 🗺️ Mapa interactivo */}
-      <div className="flex-1 relative">
+      {/* Mapa */}
+      <div className="flex-1">
         <Map
           mapLib={import("maplibre-gl")}
           mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
           initialViewState={{
-            longitude: -71.341,
-            latitude: -29.953,
-            zoom: 10,
+            longitude: -70.6693,
+            latitude: -33.4489,
+            zoom: 11,
           }}
           style={{ width: "100%", height: "100%" }}
         >
-          {/* 🔥 Capa de calor */}
+          {/* Heatmap */}
           <Source id="heatmap" type="geojson" data={geojson}>
             <Layer
               id="heatmap-layer"
@@ -256,59 +297,54 @@ export default function HeatmapPage() {
                   "interpolate",
                   ["linear"],
                   ["heatmap-density"],
-                  0,
-                  "rgba(0,0,255,0)",
-                  0.3,
-                  "rgb(0,255,255)",
-                  0.5,
-                  "rgb(0,255,0)",
-                  0.7,
-                  "rgb(255,255,0)",
-                  1,
-                  "rgb(255,0,0)",
+                  0, "rgba(0,0,255,0)",
+                  0.3, "rgb(0,255,255)",
+                  0.5, "rgb(0,255,0)",
+                  0.7, "rgb(255,255,0)",
+                  1, "rgb(255,0,0)",
                 ],
               }}
             />
           </Source>
 
-          {/* 📍 Marcadores de eventos */}
+          {/* Marcadores de eventos */}
           {events.map(
             (ev: any) =>
-              ev.longitude &&
-              ev.latitude && (
-                <Marker
-                  key={ev.id}
-                  longitude={ev.longitude}
-                  latitude={ev.latitude}
-                  anchor="bottom"
-                  onClick={() => setSelectedEvent(ev)}
-                >
-                  <div className="text-2xl cursor-pointer">📍</div>
+              ev.latitude &&
+              ev.longitude && (
+                <Marker key={ev.id} longitude={ev.longitude} latitude={ev.latitude}>
+                  <div
+                    className="text-3xl cursor-pointer hover:scale-110 transition"
+                    onClick={() => setSelectedEvent(ev)}
+                  >
+                    📍
+                  </div>
                 </Marker>
               )
           )}
 
-          {/* 💬 Popup del evento */}
+          {/* Popup */}
           {selectedEvent && (
             <Popup
               longitude={selectedEvent.longitude}
               latitude={selectedEvent.latitude}
               onClose={() => setSelectedEvent(null)}
-              closeOnClick={false}
-              className="text-black"
             >
-              <h3 className="font-bold">{selectedEvent.name}</h3>
-              <p>{selectedEvent.location}</p>
-              <p className="text-sm text-gray-600 mt-1">
-                {new Date(selectedEvent.start_date).toLocaleDateString("es-CL")}
-              </p>
-              <button
-                className="mt-2 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 w-full"
-                onClick={() => handleAsistir(selectedEvent)}
-                disabled={loading}
-              >
-                {loading ? "Registrando..." : "Asistir"}
-              </button>
+              <div className="text-black p-2">
+                <h3 className="font-bold text-lg">{selectedEvent.name}</h3>
+                <p className="text-sm text-gray-600">{selectedEvent.location}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {new Date(selectedEvent.start_date).toLocaleDateString("es-CL")}
+                </p>
+
+                <button
+                  className="mt-3 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full disabled:bg-gray-400"
+                  onClick={() => handleAsistir(selectedEvent)}
+                  disabled={loading || !walletAddress}
+                >
+                  {loading ? "Registrando..." : "Asistir"}
+                </button>
+              </div>
             </Popup>
           )}
         </Map>

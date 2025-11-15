@@ -1,240 +1,342 @@
+"""
+views.py
+API endpoints para la aplicación Tinder de Fiestas.
+"""
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.http import JsonResponse
 from web3 import Web3
-import uuid
 from eth_account.messages import encode_defunct
-from .services.auth_service import verify_signature
 
-from .blockchain_service import get_last_location, check_in
-from .analytics_service import get_heatmap_data, get_activity_stats
-from .models import (
-    UserProfile,
-    CheckIn,
-    Event,
-    EventAttendance
+from .blockchain_service import (
+    get_user_checkins,
+    verify_event_checkin_tx,
+    get_contract_info,
+    is_blockchain_connected,
+    get_last_checkin
 )
+from .analytics_service import get_heatmap_data, get_activity_stats
+from .models import UserProfile, CheckIn, Event, EventAttendance
 from .serializers import EventSerializer
 
 
-# ✅ GET: obtener última ubicación de un usuario
+# ============================================
+# BLOCKCHAIN INFO
+# ============================================
+
 @api_view(["GET"])
-def obtener_ubicacion(request, address):
+def blockchain_info(request):
     """
-    Devuelve la última ubicación registrada en blockchain para una dirección dada.
+    Retorna información del estado de la blockchain.
+    Útil para debugging.
     """
-    try:
-        ubicacion = get_last_location(address)
-        return Response({
-            "status": "success",
-            "address": address,
-            "ultima_ubicacion": ubicacion
-        })
-    except Exception as e:
-        return Response({"status": "error", "message": str(e)}, status=500)
-
-
-# ✅ POST: registrar un nuevo check-in (geolocalización general)
-@api_view(["POST"])
-def register_checkin(request):
-    """
-    Registra un check-in general (no asociado a un evento).
-    Guarda tanto en blockchain como en la base de datos local.
-    """
-    location = request.data.get("location")
-    private_key = request.data.get("private_key")
-
-    if not location or not private_key:
-        return Response({"status": "error", "message": "Parámetros inválidos"}, status=400)
-
-    # 🔗 Intentar registro en blockchain
-    tx_hash = check_in(location, private_key)
-    if not tx_hash:
-        return Response({"status": "error", "message": "No se pudo registrar en blockchain"}, status=500)
-
-    # 🧩 Obtener dirección del usuario
-    w3 = Web3(Web3.HTTPProvider("http://127.0.0.1:8545"))
-    user_address = w3.eth.account.from_key(private_key).address
-
-    # 👤 Crear o actualizar perfil local
-    user, _ = UserProfile.objects.get_or_create(wallet_address=user_address)
-
-    # 🗺️ Registrar check-in local
-    CheckIn.objects.create(user=user, location=location, tx_hash=tx_hash)
-
+    info = get_contract_info()
     return Response({
         "status": "success",
-        "mensaje": f"Check-in registrado en blockchain y base local: {location}",
-        "tx_hash": tx_hash
+        "blockchain": info
     })
 
 
-# ✅ GET: puntos de calor
+# ============================================
+# USER ENDPOINTS
+# ============================================
+
 @api_view(["GET"])
-def heatmap_data(request):
+def get_user_checkins_view(request, address):
     """
-    Endpoint: /api/heatmap/
-    Retorna los puntos de calor agrupados por coordenadas.
+    GET /api/checkins/<address>/
+    Obtiene todos los check-ins de un usuario desde blockchain.
     """
-    data = get_heatmap_data()
-    return Response(data)
+
+    if not Web3.is_address(address):
+        return Response({"error": "Invalid wallet address format"}, status=400)
+
+    try:
+        checkins = get_user_checkins(address)
+
+        for checkin in checkins:
+            try:
+                event = Event.objects.get(id=checkin["eventId"])
+                checkin["event_name"] = event.name
+                checkin["event_description"] = event.description
+                checkin["event_location"] = event.location
+            except Event.DoesNotExist:
+                checkin["event_name"] = f"Event #{checkin['eventId']}"
+
+        return Response({
+            "status": "success",
+            "wallet_address": address,
+            "total_checkins": len(checkins),
+            "checkins": checkins
+        })
+
+    except Exception as e:
+        return Response({"error": f"Error fetching check-ins: {str(e)}"}, status=500)
 
 
-# ✅ GET: estadísticas de actividad
-@api_view(["GET"])
-def activity_stats(request):
+@api_view(["POST"])
+def login_wallet(request):
     """
-    Endpoint: /api/stats/
-    Retorna estadísticas de actividad (check-ins, usuarios, top lugares).
+    POST /api/login_wallet/
+    Autentica mediante firma de MetaMask.
     """
-    days = int(request.GET.get("days", 7))
-    stats = get_activity_stats(days=days)
-    return Response(stats)
+
+    try:
+        address = request.data.get("address")
+        signature = request.data.get("signature")
+        nonce = request.data.get("nonce")
+
+        if not all([address, signature, nonce]):
+            return Response({"error": "Missing required parameters"}, status=400)
+
+        if not Web3.is_address(address):
+            return Response({"error": "Invalid wallet address format"}, status=400)
+
+        message = encode_defunct(text=nonce)
+        w3 = Web3()
+
+        try:
+            recovered = w3.eth.account.recover_message(message, signature=signature)
+        except Exception as e:
+            return Response({"error": f"Invalid signature: {str(e)}"}, status=401)
+
+        if recovered.lower() != address.lower():
+            return Response({"error": "Signature verification failed"}, status=401)
+
+        user, created = UserProfile.objects.get_or_create(wallet_address=address)
+
+        return Response({
+            "status": "success",
+            "message": "Wallet authenticated successfully",
+            "user": {
+                "wallet_address": user.wallet_address,
+                "username": user.username,
+                "created": created,
+                "total_checkins": user.checkins.count()
+            }
+        })
+
+    except Exception as e:
+        return Response({"error": f"Authentication error: {str(e)}"}, status=500)
 
 
-# ✅ GET / POST: eventos
+# ============================================
+# EVENT ENDPOINTS
+# ============================================
+
 @api_view(["GET", "POST"])
 def events_view(request):
     """
-    GET → lista todos los eventos
-    POST → crea un nuevo evento
+    GET → Lista todos los eventos (solo array)
+    POST → Crea evento
     """
+
     if request.method == "GET":
         eventos = Event.objects.all().order_by("-start_date")
         serializer = EventSerializer(eventos, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data)  # SOLO EL ARRAY ✔
 
     elif request.method == "POST":
         serializer = EventSerializer(data=request.data)
+
         if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"status": "success", "evento": serializer.data},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            event = serializer.save()
+            return Response({
+                "status": "success",
+                "message": "Event created successfully",
+                "event": EventSerializer(event).data
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            "error": "Invalid event data",
+            "details": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ✅ GET: mapa combinado (eventos + check-ins)
-@api_view(["GET"])
-def mapa_completo(request):
-    """
-    Devuelve datos combinados:
-    - Eventos (marcadores)
-    - Check-ins (puntos de calor)
-    """
-    eventos = Event.objects.all()
-    eventos_data = EventSerializer(eventos, many=True).data
-
-    checkins = CheckIn.objects.filter(latitude__isnull=False, longitude__isnull=False)
-    checkins_data = [
-        {"latitude": c.latitude, "longitude": c.longitude, "count": 1}
-        for c in checkins
-    ]
-
-    return Response({
-        "eventos": eventos_data,
-        "checkins": checkins_data
-    })
-
-
-# ✅ POST: registrar asistencia a un evento
 @api_view(["POST"])
 def event_checkin(request):
     """
-    Registra la asistencia de un usuario (wallet) a un evento.
-    Si no hay fondos en la wallet, simula el tx_hash para permitir el registro local.
+    POST /api/event_checkin/
+    Registra asistencia verificando TX en blockchain.
     """
+
     event_id = request.data.get("event_id")
     wallet_address = request.data.get("wallet_address")
+    tx_hash = request.data.get("tx_hash")
 
-    if not event_id or not wallet_address:
-        return Response({"status": "error", "message": "Faltan parámetros"}, status=400)
+    if not all([event_id, wallet_address, tx_hash]):
+        return Response({"error": "Missing required parameters"}, status=400)
+
+    if not Web3.is_address(wallet_address):
+        return Response({"error": "Invalid wallet address format"}, status=400)
+
+    if not tx_hash.startswith("0x") or len(tx_hash) != 66:
+        return Response({"error": "Invalid transaction hash format"}, status=400)
+
+    try:
+        event_id = int(event_id)
+        if event_id <= 0:
+            raise ValueError()
+    except:
+        return Response({"error": "Invalid event ID"}, status=400)
 
     try:
         event = Event.objects.get(id=event_id)
     except Event.DoesNotExist:
-        return Response({"status": "error", "message": "Evento no encontrado"}, status=404)
+        return Response({"error": "Event not found"}, status=404)
 
-    # 👤 Crear o recuperar usuario local
-    user, _ = UserProfile.objects.get_or_create(wallet_address=wallet_address)
+    user, created_user = UserProfile.objects.get_or_create(wallet_address=wallet_address)
 
-    # 🚫 Evitar asistencia duplicada
+    if EventAttendance.objects.filter(tx_hash=tx_hash).exists():
+        return Response({"error": "This transaction has already been recorded"}, status=400)
+
     if EventAttendance.objects.filter(user=user, event=event).exists():
-        return Response({
-            "status": "error",
-            "message": "El usuario ya asistió a este evento"
-        }, status=400)
+        return Response({"error": "User has already checked in to this event"}, status=400)
 
-    # ⚙️ Simular TX hash (sin necesidad de firmar)
-    tx_hash = f"SIMULATED_TX_{uuid.uuid4().hex[:10]}"
+    try:
+        blockchain_data = verify_event_checkin_tx(
+            tx_hash=tx_hash,
+            wallet_address=wallet_address,
+            event_id=event_id
+        )
+    except Exception as e:
+        return Response({"error": f"Blockchain verification failed: {str(e)}"}, status=400)
 
-    # 💾 Guardar asistencia local
-    EventAttendance.objects.create(
+    attendance = EventAttendance.objects.create(
         user=user,
         event=event,
         tx_hash=tx_hash
     )
 
+    CheckIn.objects.create(
+        user=user,
+        location=event.location,
+        latitude=event.latitude,
+        longitude=event.longitude,
+        tx_hash=tx_hash
+    )
+
     return Response({
         "status": "success",
-        "message": f"Asistencia registrada para {event.name}",
-        "tx_hash": tx_hash,
-        "wallet": user.wallet_address
-    })
+        "message": f"Check-in verified and registered for {event.name}",
+        "attendance_id": attendance.id,
+        "event": EventSerializer(event).data,
+        "blockchain": blockchain_data,
+        "user": {
+            "wallet_address": user.wallet_address,
+            "new_user": created_user,
+            "total_checkins": user.checkins.count()
+        }
+    }, status=201)
 
 
-# ✅ POST: autenticación mediante MetaMask
-@api_view(["POST"])
-def login_wallet(request):
+# ============================================
+# ANALYTICS ENDPOINTS
+# ============================================
+
+@api_view(["GET"])
+def heatmap_data(request):
     """
-    Autentica un usuario mediante firma con MetaMask.
-    Recibe: { "address": "0x...", "signature": "...", "nonce": "..." }
+    GET /api/heatmap/
+    Devuelve SOLO EL ARRAY ✔
     """
     try:
-        data = request.data
-        address = data.get("address")
-        signature = data.get("signature")
-        nonce = data.get("nonce")
+        data = get_heatmap_data()
+        return Response(data)  # SOLO EL ARRAY ✔
+    except Exception as e:
+        return Response({"error": f"Error fetching heatmap data: {str(e)}"}, status=500)
 
-        if not all([address, signature, nonce]):
-            return Response(
-                {"status": "error", "message": "Faltan parámetros"},
-                status=400
-            )
 
-        # ✅ Crear objeto mensaje firmado (según formato EIP-191)
-        message = encode_defunct(text=nonce)
+@api_view(["GET"])
+def activity_stats(request):
+    """
+    GET /api/stats/
+    """
 
-        # ✅ Verificar firma usando Web3.py
-        w3 = Web3()
-        recovered_address = w3.eth.account.recover_message(
-            message,
-            signature=signature
-        )
+    try:
+        days = int(request.GET.get("days", 7))
 
-        if recovered_address.lower() != address.lower():
-            return Response(
-                {"status": "error", "message": "Firma inválida"},
-                status=401
-            )
+        if days <= 0:
+            return Response({"error": "Days must be positive"}, status=400)
 
-        # ✅ Crear o recuperar usuario local
-        user, created = UserProfile.objects.get_or_create(wallet_address=address)
+        stats = get_activity_stats(days=days)
 
         return Response({
             "status": "success",
-            "message": "Wallet autenticada correctamente",
-            "user": {
-                "wallet_address": user.wallet_address,
-                "created": created
+            "period_days": days,
+            **stats
+        })
+
+    except ValueError:
+        return Response({"error": "Invalid days parameter"}, status=400)
+    except Exception as e:
+        return Response({"error": f"Error fetching stats: {str(e)}"}, status=500)
+
+
+@api_view(["GET"])
+def mapa_completo(request):
+    """
+    GET /api/mapa/
+    Combina eventos + check-ins
+    """
+
+    try:
+        eventos = Event.objects.all()
+        eventos_data = EventSerializer(eventos, many=True).data
+
+        checkins = CheckIn.objects.filter(
+            latitude__isnull=False,
+            longitude__isnull=False
+        )
+
+        checkins_data = [
+            {
+                "latitude": c.latitude,
+                "longitude": c.longitude,
+                "count": 1,
+                "location": c.location
             }
+            for c in checkins
+        ]
+
+        return Response({
+            "status": "success",
+            "total_events": len(eventos_data),
+            "total_checkins": len(checkins_data),
+            "eventos": eventos_data,
+            "checkins": checkins_data
         })
 
     except Exception as e:
-        print(f"⚠️ Error en autenticación: {e}")
-        return Response(
-            {"status": "error", "message": str(e)},
-            status=500
-        )
+        return Response({"error": f"Error fetching map data: {str(e)}"}, status=500)
+
+
+# ============================================
+# HEALTH CHECK
+# ============================================
+
+@api_view(["GET"])
+def health_check(request):
+    """
+    GET /api/health/
+    """
+
+    blockchain_status = "connected" if is_blockchain_connected() else "disconnected"
+
+    try:
+        Event.objects.count()
+        db_status = "connected"
+    except:
+        db_status = "disconnected"
+
+    overall_status = "healthy" if (
+        blockchain_status == "connected" and db_status == "connected"
+    ) else "degraded"
+
+    return Response({
+        "status": overall_status,
+        "blockchain": blockchain_status,
+        "database": db_status,
+        "contract_info": get_contract_info()
+    })
