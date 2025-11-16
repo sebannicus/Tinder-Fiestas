@@ -2,6 +2,12 @@
   "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
   "abi": [
     {
+      "type": "constructor",
+      "stateMutability": "undefined",
+      "payable": false,
+      "inputs": []
+    },
+    {
       "type": "event",
       "anonymous": false,
       "name": "EventCheckedIn",
@@ -29,6 +35,40 @@
       ]
     },
     {
+      "type": "event",
+      "anonymous": false,
+      "name": "EventCreated",
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "eventId",
+          "indexed": true
+        },
+        {
+          "type": "uint256",
+          "name": "timestamp",
+          "indexed": false
+        }
+      ]
+    },
+    {
+      "type": "event",
+      "anonymous": false,
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "type": "address",
+          "name": "previousOwner",
+          "indexed": true
+        },
+        {
+          "type": "address",
+          "name": "newOwner",
+          "indexed": true
+        }
+      ]
+    },
+    {
       "type": "function",
       "name": "checkInEvent",
       "constant": false,
@@ -44,6 +84,108 @@
         }
       ],
       "outputs": []
+    },
+    {
+      "type": "function",
+      "name": "getEventAttendees",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_eventId"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "address[]",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getEventStats",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "uint256",
+          "name": "_eventId"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "uint256",
+          "name": "totalCheckIns"
+        },
+        {
+          "type": "uint256",
+          "name": "uniqueUsers"
+        },
+        {
+          "type": "bool",
+          "name": "exists"
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getLastCheckIn",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_user"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "tuple",
+          "name": "",
+          "components": [
+            {
+              "type": "address",
+              "name": "user"
+            },
+            {
+              "type": "string",
+              "name": "location"
+            },
+            {
+              "type": "uint256",
+              "name": "timestamp"
+            },
+            {
+              "type": "uint256",
+              "name": "eventId"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "getUserCheckInCount",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_user"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "uint256",
+          "name": ""
+        }
+      ]
     },
     {
       "type": "function",
@@ -81,6 +223,79 @@
           ]
         }
       ]
+    },
+    {
+      "type": "function",
+      "name": "hasCheckedIn",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": ""
+        },
+        {
+          "type": "uint256",
+          "name": ""
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "hasUserCheckedIn",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "_user"
+        },
+        {
+          "type": "uint256",
+          "name": "_eventId"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "bool",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "constant": true,
+      "stateMutability": "view",
+      "payable": false,
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "address",
+          "name": ""
+        }
+      ]
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "constant": false,
+      "payable": false,
+      "inputs": [
+        {
+          "type": "address",
+          "name": "newOwner"
+        }
+      ],
+      "outputs": []
     },
     {
       "type": "function",
