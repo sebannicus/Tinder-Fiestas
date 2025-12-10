@@ -1,4 +1,4 @@
-<h1>🕺 Tinder de las Fiestas</h1>
+<h1>🕺 Tinder de las Fiestas MVP</h1>
 <h3>🌐 Django + Blockchain + React (Next.js + MapLibre GL)</h3>
 
 <p><strong>Autor:</strong> Sebastián Morales<br>
@@ -242,3 +242,4 @@ Usuario → Django API → Blockchain → Django ORM → Base de datos → Front
 📍 La Serena, Chile<br>
 💼 Fullstack Blockchain Developer<br>
 <em>“Construyendo experiencias descentralizadas que conectan personas en tiempo real.”</em></p>
+
