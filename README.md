@@ -1,184 +1,244 @@
-# 🕺 Tinder de las Fiestas
-### 🌐 Django + Blockchain + React (Next.js + MapLibre GL)
+<h1>🕺 Tinder de las Fiestas</h1>
+<h3>🌐 Django + Blockchain + React (Next.js + MapLibre GL)</h3>
 
-**Autor:** Sebastián Morales  
-**Alias:** sebannicus 🚀 | Fullstack Blockchain Developer  
-**Ubicación:** La Serena, Chile  
+<p><strong>Autor:</strong> Sebastián Morales<br>
+<strong>Alias:</strong> sebannicus 🚀 | Fullstack Blockchain Developer<br>
+<strong>Ubicación:</strong> La Serena, Chile</p>
 
----
+<hr>
 
-## 🧱 Checkpoint Actual
+<h2>🧱 Checkpoint Actual</h2>
 
-✅ **Integración Blockchain + Django + Heatmap funcional + Eventos activos**
+<p>✅ <strong>Integración Blockchain + Django + Heatmap funcional + Eventos activos</strong></p>
 
-**Versión:** MVP 1.0  
-**Estado:** 100% funcional en entorno local  
-**Componentes:** Hardhat · Solidity · Django REST Framework · Next.js · TailwindCSS · MapLibre GL  
+<p><strong>Versión:</strong> MVP 1.0<br>
+<strong>Estado:</strong> 100% funcional en entorno local<br>
+<strong>Componentes:</strong> Hardhat · Solidity · Django REST Framework · Next.js · TailwindCSS · MapLibre GL</p>
 
----
+<hr>
 
-## 🧭 Descripción del Proyecto
+<h2>🧭 Descripción del Proyecto</h2>
 
-**Tinder de las Fiestas** es una plataforma descentralizada que permite registrar y visualizar la presencia de usuarios en eventos **en tiempo real**, mediante **tecnología blockchain y geolocalización**.
+<p><strong>Tinder de las Fiestas</strong> es una plataforma descentralizada que permite registrar y visualizar la presencia de usuarios en eventos <strong>en tiempo real</strong>, mediante <strong>tecnología blockchain y geolocalización</strong>.</p>
 
-### 🔗 Tecnologías principales
-- **Blockchain:** Hardhat + Solidity (contrato inteligente de presencia)  
-- **Backend:** Django REST Framework (API intermedia entre blockchain y frontend)  
-- **Frontend:** Next.js + TailwindCSS + MapLibre GL (mapa interactivo con puntos de calor)  
+<h3>🔗 Tecnologías principales</h3>
+<ul>
+  <li><strong>Blockchain:</strong> Hardhat + Solidity</li>
+  <li><strong>Backend:</strong> Django REST Framework</li>
+  <li><strong>Frontend:</strong> Next.js + TailwindCSS + MapLibre GL</li>
+</ul>
 
-El resultado:  
-Una red trazable, transparente y visual para **experiencias sociales geolocalizadas**.
+<hr>
 
----
+<h2>⚙️ Estructura del Proyecto</h2>
 
-## ⚙️ Estructura del Proyecto
-
+<pre>
 tinder-de-las-fiestas/
  │
- ├── backend/ # API REST Django
- │ ├── blockchain_api/ # Integración Web3 + ORM + Views
- │ ├── tools/ # Scripts de mantenimiento (reset, seeds, etc.)
- │ ├── manage.py
- │ ├── .env # Variables de entorno
- │ └── venv/ # Entorno virtual Python
+ ├── backend/              # API REST Django
+ │   ├── blockchain_api/   # Integración Web3 + ORM + Views
+ │   ├── tools/            # Scripts de mantenimiento
+ │   ├── manage.py
+ │   ├── .env
+ │   └── venv/
  │
- ├── blockchain/ # Contrato inteligente + scripts Hardhat
- │ ├── contracts/ProofOfPresence.sol
- │ ├── scripts/deploy.js
- │ └── deployed/ProofOfPresence.json
+ ├── blockchain/           # Smart Contract + Hardhat
+ │   ├── contracts/ProofOfPresence.sol
+ │   ├── scripts/deploy.js
+ │   └── deployed/ProofOfPresence.json
  │
- └── frontend/ # Next.js + Tailwind + MapLibre
- ├── src/app/
- ├── package.json
- └── ...
+ └── frontend/             # Next.js + MapLibre
+     ├── src/app/
+     ├── package.json
+     └── ...
+</pre>
 
+<hr>
 
-## 🚀 Requisitos Previos
+<h2>🚀 Requisitos Previos</h2>
 
-| Componente | Versión recomendada | Instalación |
-|-------------|--------------------|--------------|
-| Python | 3.10+ | [python.org](https://www.python.org/downloads/) |
-| Node.js | 18+ | [nodejs.org](https://nodejs.org/en/) |
-| Hardhat | Última | `npm install --save-dev hardhat` |
-| MetaMask (opcional) | — | Para pruebas visuales blockchain |
-| Git | — | [git-scm.com](https://git-scm.com/downloads) |
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Versión recomendada</th>
+<th>Instalación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>3.10+</td>
+<td>https://www.python.org/downloads/</td>
+</tr>
+<tr>
+<td>Node.js</td>
+<td>18+</td>
+<td>https://nodejs.org/</td>
+</tr>
+<tr>
+<td>Hardhat</td>
+<td>Última</td>
+<td>npm install --save-dev hardhat</td>
+</tr>
+<tr>
+<td>MetaMask (opcional)</td>
+<td>—</td>
+<td>Para pruebas blockchain</td>
+</tr>
+<tr>
+<td>Git</td>
+<td>—</td>
+<td>https://git-scm.com/downloads</td>
+</tr>
+</tbody>
+</table>
 
----
+<hr>
 
-## 🧰 Instalación Paso a Paso
+<h2>🧰 Instalación Paso a Paso</h2>
 
-### 1️⃣ Clonar el Repositorio
+<h3>1️⃣ Clonar el Repositorio</h3>
 
+<pre>
 git clone https://github.com/sebannicus/tinder-de-las-fiestas.git
 cd tinder-de-las-fiestas
-2️⃣ Configurar el Backend (Django)
-Crear entorno virtual e instalar dependencias:
+</pre>
 
+<h3>2️⃣ Configurar Backend (Django)</h3>
 
+<pre>
 cd backend
 python -m venv venv
-venv\Scripts\activate   # En Windows
-# source venv/bin/activate   # En Linux o Mac
+venv\Scripts\activate     # Windows
+# source venv/bin/activate     # Linux/Mac
 pip install -r requirements.txt
-Crear archivo .env en backend/ con el siguiente contenido:
-ini
+</pre>
 
-# --- CONFIGURACIÓN DEL ENTORNO DJANGO ---
+<p>Crear archivo <code>.env</code>:</p>
+
+<pre>
 DEBUG=True
 SECRET_KEY=django-insecure-tinder-fiesta-dev
 ALLOWED_HOSTS=127.0.0.1,localhost
 
-# --- CONFIGURACIÓN DE LA BLOCKCHAIN ---
 RPC_URL=http://127.0.0.1:8545
 CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
 PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+</pre>
 
-Aplicar migraciones y crear base de datos:
+<p>Aplicar migraciones:</p>
+
+<pre>
 python manage.py makemigrations
 python manage.py migrate
-(Opcional pero recomendado) Restaurar entorno Django:
+</pre>
 
-python tools/reset_environment.py
+<p>Iniciar servidor:</p>
 
-Iniciar servidor Django:
+<pre>
 python manage.py runserver
-📍 Abre: http://127.0.0.1:8000/
+</pre>
 
-3️⃣ Iniciar la Blockchain (Hardhat)
-Abrir una nueva terminal y ejecutar:
+<p>📍 http://127.0.0.1:8000/</p>
 
+<hr>
 
+<h3>3️⃣ Iniciar Blockchain (Hardhat)</h3>
+
+<pre>
 cd ../blockchain
 npm install
 npx hardhat node
-Esto iniciará un nodo local de Ethereum con 20 cuentas de prueba (10000 ETH cada una).
+</pre>
 
-Luego, en otra terminal:
+<p>En otra terminal:</p>
 
-
+<pre>
 npx hardhat run scripts/deploy.js --network localhost
-Salida esperada:
+</pre>
 
-✅ Contract deployed to: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-📄 Contract info saved to: blockchain/deployed/ProofOfPresence.json
+<hr>
 
+<h3>4️⃣ Iniciar Frontend (Next.js)</h3>
 
-4️⃣ Iniciar el Frontend (Next.js + MapLibre)
+<pre>
 cd ../frontend
 npm install
 npm run dev
-📍 Abre en navegador: http://localhost:3000
+</pre>
 
-Verás el mapa con eventos activos y puntos de calor (check-ins).
+<p>📍 http://localhost:3000</p>
 
-📡 Endpoints Principales (API Django)
-Método	Endpoint	Descripción
-POST	/api/checkin/	Registra un check-in en blockchain y base local
-GET	/api/heatmap/	Devuelve coordenadas para mapa de calor
-GET	/api/stats/	Retorna estadísticas de check-ins
-GET/POST	/api/events/	Lista o crea eventos
-POST	/api/event_checkin/	Registra asistencia de un usuario a evento
+<hr>
 
-📦 Ejemplo de Petición POST /api/checkin/
+<h2>📡 Endpoints Principales (API Django)</h2>
 
+<table>
+<thead>
+<tr><th>Método</th><th>Endpoint</th><th>Descripción</th></tr>
+</thead>
+<tbody>
+<tr><td>POST</td><td>/api/checkin/</td><td>Registrar check-in</td></tr>
+<tr><td>GET</td><td>/api/heatmap/</td><td>Puntos de calor</td></tr>
+<tr><td>GET</td><td>/api/stats/</td><td>Estadísticas</td></tr>
+<tr><td>GET/POST</td><td>/api/events/</td><td>Eventos</td></tr>
+<tr><td>POST</td><td>/api/event_checkin/</td><td>Registrar asistencia</td></tr>
+</tbody>
+</table>
+
+<hr>
+
+<h2>📦 Ejemplo POST /api/checkin/</h2>
+
+<pre>
 {
   "location": "La Serena",
   "private_key": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
 }
+</pre>
 
-🧠 Flujo General del Sistema
+<hr>
 
+<h2>🧠 Flujo General del Sistema</h2>
 
-A[Usuario] -->|POST /checkin| B[Django API]
-B -->|Blockchain TX| C[Hardhat Node]
-C -->|Hash TX| B
-B -->|Guardar ORM| D[DB Local]
-D -->|Datos agregados| E[Mapa (Next.js + MapLibre)]
-E -->|Visualización| A
-🧾 Notas Importantes
-🔗 El proyecto utiliza Hardhat local, sin transacciones reales.
+<pre>
+Usuario → Django API → Blockchain → Django ORM → Base de datos → Frontend → Usuario
+</pre>
 
-⚙️ Cada despliegue crea un nuevo CONTRACT_ADDRESS, actualízalo en .env.
+<hr>
 
-🌍 Si el mapa no muestra puntos, asegúrate de que los registros incluyan latitude y longitude.
+<h2>🧾 Notas Importantes</h2>
+<ul>
+  <li>Hardhat local, sin transacciones reales.</li>
+  <li>Cada despliegue genera un nuevo <code>CONTRACT_ADDRESS</code>.</li>
+  <li>Requiere coordenadas en heatmap.</li>
+  <li><code>reset_environment.py</code> restaura todo.</li>
+</ul>
 
-🧹 Usa python tools/reset_environment.py si las migraciones o la base se desincronizan.
+<hr>
 
-✅ Checkpoints del Proyecto
-Etapa	Descripción	Estado
-1	Configuración Django + Blockchain	✅
-2	Despliegue de contrato y conexión Web3	✅
-3	Registro bidireccional Django ↔ Blockchain	✅
-4	Visualización Heatmap (MapLibre GL)	✅
-5	Geolocalización automática de ciudades	🔄 En progreso
-6	Panel de estadísticas de eventos	🚧 Planeado
+<h2>✅ Checkpoints del Proyecto</h2>
 
-🧑‍💻 Autor
-Sebastián Morales (sebannicus)
-📍 La Serena, Chile
-💼 Fullstack Blockchain Developer
-💬 “Construyendo experiencias descentralizadas que conectan personas en tiempo real.”
+<table>
+<thead>
+<tr><th>Etapa</th><th>Descripción</th><th>Estado</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>Config Django + Blockchain</td><td>✅</td></tr>
+<tr><td>2</td><td>Despliegue contrato</td><td>✅</td></tr>
+<tr><td>3</td><td>Registro bidireccional</td><td>✅</td></tr>
+<tr><td>4</td><td>Heatmap real-time</td><td>✅</td></tr>
+<tr><td>5</td><td>Geolocalización automática</td><td>🔄</td></tr>
+<tr><td>6</td><td>Panel estadísticas</td><td>🚧</td></tr>
+</tbody>
+</table>
 
+<hr>
 
+<h2>🧑‍💻 Autor</h2>
 
-
+<p><strong>Sebastián Morales (sebannicus)</strong><br>
+📍 La Serena, Chile<br>
+💼 Fullstack Blockchain Developer<br>
+<em>“Construyendo experiencias descentralizadas que conectan personas en tiempo real.”</em></p>
